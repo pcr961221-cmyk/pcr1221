@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>나의 수업, 오각형으로 비추다</title>
+<style>
+  :root{
+    --ink:#eef0e8;
+    --board:#243b34;
+    --board-deep:#1a2b26;
+    --chalk:#f4efe2;
+    --chalk-dim:#c9d3c6;
+    --line:rgba(244,239,226,0.18);
+    --line-strong:rgba(244,239,226,0.34);
+    --gold:#e8b84b;
+    --gold-soft:rgba(232,184,75,0.28);
+    --coral:#e2725b;
+    --teal:#6fae9e;
+    --serif: "Noto Serif KR", "Nanum Myeongjo", serif;
+    --sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(120% 140% at 20% 0%, #2e463f 0%, var(--board) 45%, var(--board-deep) 100%);
+    color:var(--chalk);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:36px 20px 64px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  .eyebrow{
+    font-family:var(--sans);
+    font-size:12.5px;
+    letter-spacing:0.28em;
+    color:var(--teal);
+    text-transform:uppercase;
+    margin:0 0 14px;
+    font-weight:600;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    line-height:1.25;
+    margin:0 0 12px;
+    color:var(--chalk);
+  }
+  h1 em{
+    font-style:normal;
+    color:var(--gold);
+  }
+  .lede{
+    font-size:15.5px;
+    line-height:1.7;
+    color:var(--chalk-dim);
+    max-width:640px;
+    margin:0 0 30px;
+  }
+
+  /* ---------- intro ---------- */
+  #intro-screen .axis-preview{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:34px;
+  }
+  .axis-chip{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:7px 16px;
+    font-size:13px;
+    color:var(--chalk-dim);
+    display:flex;align-items:center;gap:8px;
+  }
+  .axis-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);}
+
+  button.primary{
+    background:var(--gold);
+    color:#282210;
+    border:none;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:15px;
+    padding:14px 26px;
+    border-radius:8px;
+    cursor:pointer;
+    letter-spacing:0.01em;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 6px 18px rgba(232,184,75,0.18);
+  }
+  button.primary:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(232,184,75,0.28);}
+  button.primary:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none;}
+  button.ghost{
+    background:transparent;
+    border:1px solid var(--line-strong);
+    color:var(--chalk);
+    font-family:var(--sans);
+    font-size:14px;
+    padding:12px 22px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  button.ghost:hover{border-color:var(--gold);color:var(--gold);}
+
+  /* ---------- layout for survey ---------- */
+  .stage{
+    display:none;
+  }
+  .stage.active{display:block;}
+
+  .survey-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:38px;
+    align-items:start;
+  }
+  @media (max-width:820px){
+    .survey-grid{grid-template-columns:1fr;}
+  }
+
+  .card{
+    background:rgba(244,239,226,0.05);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:28px 26px;
+  }
+
+  .progress-row{
+    display:flex;
+    gap:6px;
+    margin-bottom:22px;
+  }
+  .progress-seg{
+    height:4px;
+    flex:1;
+    border-radius:2px;
+    background:var(--line);
+    overflow:hidden;
+  }
+  .progress-seg i{
+    display:block;height:100%;width:0%;
+    background:var(--gold);
+    transition:width .5s ease;
+  }
+
+  .cat-label{
+    font-family:var(--serif);
+    font-size:23px;
+    color:var(--gold);
+    margin:0 0 4px;
+  }
+  .cat-sub{
+    font-size:13px;
+    color:var(--chalk-dim);
+    margin:0 0 26px;
+  }
+
+  .q-block{margin-bottom:26px;}
+  .q-text{
+    font-size:15.5px;
+    line-height:1.6;
+    margin:0 0 12px;
+    color:var(--ink);
+  }
+  .q-num{color:var(--teal);font-weight:700;margin-right:6px;}
+
+  .scale{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+  }
+  .scale button{
+    background:transparent;
+    border:1px solid var(--line-strong);
+    border-radius:10px;
+    color:var(--chalk-dim);
+    padding:10px 4px;
+    font-size:12.5px;
+    line-height:1.35;
+    cursor:pointer;
+    font-family:var(--sans);
+    transition:all .15s ease;
+  }
+  .scale button:hover{border-color:var(--gold);color:var(--chalk);}
+  .scale button.picked{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#282210;
+    font-weight:700;
+  }
+
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+  }
+  .hint{font-size:12.5px;color:var(--chalk-dim);}
+
+  /* ---------- pentagon panel ---------- */
+  .pentagon-card{
+    position:sticky;
+    top:24px;
+    text-align:center;
+  }
+  .pentagon-title{
+    font-family:var(--serif);
+    font-size:16px;
+    color:var(--chalk-dim);
+    margin:0 0 10px;
+  }
+  svg#pentaSvg{width:100%;height:auto;max-width:340px;}
+  .axis-name{font-size:11.5px;fill:var(--chalk-dim);font-family:var(--sans);}
+  .axis-score{font-size:13px;fill:var(--gold);font-weight:700;font-family:var(--sans);}
+
+  .legend-list{
+    text-align:left;
+    margin-top:18px;
+    font-size:12.5px;
+    color:var(--chalk-dim);
+  }
+  .legend-row{
+    display:flex;justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .legend-row span.v{color:var(--gold);font-weight:700;}
+
+  /* ---------- result ---------- */
+  #result-screen .result-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:40px;
+    align-items:start;
+  }
+  @media (max-width:820px){#result-screen .result-grid{grid-template-columns:1fr;}}
+
+  .lowest-callout{
+    border-left:3px solid var(--coral);
+    background:rgba(226,114,91,0.08);
+    padding:18px 20px;
+    border-radius:4px;
+    margin-top:22px;
+  }
+  .lowest-callout .tag{
+    font-size:12px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--coral);font-weight:700;margin-bottom:8px;display:block;
+  }
+  .lowest-callout p{margin:0 0 10px;font-size:14.5px;line-height:1.65;color:var(--ink);}
+  .lowest-callout p:last-child{margin-bottom:0;}
+  .lowest-callout .suggest{color:var(--gold-soft);}
+  .lowest-callout b{color:var(--gold);}
+
+  textarea{
+    width:100%;
+    min-height:110px;
+    background:rgba(0,0,0,0.18);
+    border:1px solid var(--line-strong);
+    border-radius:10px;
+    color:var(--chalk);
+    font-family:var(--sans);
+    font-size:14px;
+    padding:14px;
+    resize:vertical;
+    margin-top:10px;
+  }
+  textarea::placeholder{color:rgba(238,240,232,0.35);}
+
+  .foot-actions{
+    margin-top:28px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  input.blank{
+    border:none;
+    border-bottom:1.5px solid var(--gold);
+    background:transparent;
+    color:var(--chalk);
+    font-family:var(--serif);
+    font-size:15.5px;
+    padding:2px 4px;
+    min-width:130px;
+    text-align:center;
+    outline:none;
+  }
+  input.blank.wide{min-width:220px;}
+  input.blank::placeholder{color:rgba(238,240,232,0.32);font-family:var(--sans);font-size:13px;}
+  input.blank:focus{border-bottom-color:var(--coral);}
+  .fillin-sentence{
+    font-family:var(--serif);
+    font-size:15.5px;
+    line-height:2.4;
+    color:var(--ink);
+    max-width:680px;
+    margin:0 0 30px;
+  }
+
+  .quote-strip{
+    font-family:var(--serif);
+    font-style:italic;
+    color:var(--chalk-dim);
+    font-size:14.5px;
+    border-top:1px solid var(--line);
+    margin-top:40px;
+    padding-top:18px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= INTRO ================= -->
+  <div class="stage active" id="intro-screen">
+    <p class="eyebrow">수업 자가진단 · 오각형 프로파일링</p>
+    <h1>나의 수업, <em>오각형</em>으로 비추다</h1>
+    <p class="lede">15개의 짧은 질문에 답하면, 답할 때마다 오른쪽 오각형이 실시간으로 채워집니다.
+    점수를 입력하는 것이 아니라, 나의 수업 장면을 떠올리며 솔직하게 답하는 것이 핵심입니다.
+    다 채운 뒤에는 가장 옅게 채워진 꼭짓점, 즉 나의 수업에서 아직 닿지 못한 '사각지대'를 함께 들여다봅니다.</p>
+    <div class="axis-preview">
+      <div class="axis-chip"><span class="dot"></span>주도성 Agency</div>
+      <div class="axis-chip"><span class="dot"></span>과제 Task</div>
+      <div class="axis-chip"><span class="dot"></span>상호작용 Interaction</div>
+      <div class="axis-chip"><span class="dot"></span>피드백 Feedback</div>
+      <div class="axis-chip"><span class="dot"></span>맞춤형 지원 Differentiation</div>
+    </div>
+    <button class="primary" onclick="goSurvey()">진단 시작하기</button>
+  </div>
+
+  <!-- ================= SURVEY ================= -->
+  <div class="stage" id="survey-screen">
+    <p class="eyebrow" id="survey-eyebrow">수업 자가진단</p>
+    <h1 id="survey-title">오각형을 채워가는 중</h1>
+    <div class="survey-grid">
+      <div class="card">
+        <div class="progress-row" id="progressRow"></div>
+        <p class="cat-label" id="catLabel"></p>
+        <p class="cat-sub" id="catSub"></p>
+        <div id="qContainer"></div>
+        <div class="nav-row">
+          <span class="hint" id="navHint">가장 최근 수업 장면을 떠올리며 답해보세요.</span>
+          <button class="primary" id="nextBtn" disabled onclick="nextCategory()">다음 영역 →</button>
+        </div>
+      </div>
+
+      <div class="card pentagon-card">
+        <p class="pentagon-title">실시간 오각형</p>
+        <svg id="pentaSvg" viewBox="0 0 360 360"></svg>
+        <div class="legend-list" id="legendList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RESULT ================= -->
+  <div class="stage" id="result-screen">
+    <p class="eyebrow">진단 결과</p>
+    <h1>나의 수업 오각형이 완성되었습니다</h1>
+    <p class="fillin-sentence">
+      내 수업의 강점은 <input type="text" class="blank" id="blankStrength" placeholder="예: 학생 참여도"> 이고, 상대적으로 약한 부분은 <input type="text" class="blank" id="blankWeak" placeholder="예: 개별 피드백">이다.<br>
+      이를 개선하는 방법은 <input type="text" class="blank wide" id="blankImprove" placeholder="다음 수업에서 시도해볼 방법을 적어보세요">이다.
+    </p>
+
+    <div class="result-grid">
+      <div class="card" style="text-align:center;">
+        <svg id="pentaSvgFinal" viewBox="0 0 360 360"></svg>
+        <div class="legend-list" id="legendListFinal"></div>
+      </div>
+
+      <div>
+        <div class="lowest-callout" id="lowestCallout"></div>
+        <div class="card" style="margin-top:20px;">
+          <p class="cat-label" style="font-size:17px;">오늘의 성찰 한 줄</p>
+          <p class="cat-sub">부족했던 꼭짓점 하나를 골라, 다음 수업에서 무엇을 먼저 바꿔볼지 적어보세요.</p>
+          <textarea id="reflection" placeholder="예) 상호작용 점수가 가장 낮았다. 모둠 활동 시 채팅 로그를 분석해 소외되는 학생을 먼저 찾아봐야겠다."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot-actions">
+      <button class="ghost" onclick="restart()">다시 진단하기</button>
+    </div>
+    <p class="quote-strip">"AI·디지털 기술은 데이터를 제공하고, 교사는 이를 해석하여 학생의 성장을 지원합니다."</p>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const AXES = [
+  {
+    key: "agency", name: "주도성", full: "학습자 주도성 (Agency)",
+    labelLines: ["학습자 주도성"],
+    sub: "학생이 목표·방법·속도를 스스로 선택하는 정도",
+    questions: [
+      "학생이 수업의 목표나 방법을 스스로 선택할 기회가 있다.",
+      "학생이 자신의 학습 속도와 순서를 조절할 수 있다.",
+      "학생이 다음에 무엇을 학습할지 스스로 결정하는 순간이 있다."
+    ],
+    low: "학생 스스로 목표를 세우고 기록하는 디지털 학습일지나 체크리스트부터 도입해보세요. 작은 선택권을 주는 것에서 주도성은 시작됩니다."
+  },
+  {
+    key: "task", name: "과제", full: "의미 있는 과제 (Task)",
+    labelLines: ["의미있는 과제"],
+    sub: "삶의 맥락과 연결된 수행 과제인지",
+    questions: [
+      "과제가 교과서 밖 실제 삶의 맥락과 연결되어 있다.",
+      "과제가 단순 암기를 넘어 사고와 적용을 요구한다.",
+      "학생이 과제의 의미나 목적을 이해하고 참여한다."
+    ],
+    low: "AI 도구로 실생활 자료·데이터를 손쉽게 수집해, 단편 지식이 아닌 '사고 과정'을 묻는 과제로 한 단원만 먼저 바꿔보세요."
+  },
+  {
+    key: "interaction", name: "상호작용", full: "구조화된 상호작용 (Interaction)",
+    labelLines: ["구조화된", "상호작용"],
+    sub: "질문·협력·피드백이 수업 안에 설계되어 있는지",
+    questions: [
+      "수업 중 질문·협력·피드백이 의도적으로 설계되어 있다.",
+      "모둠 활동에서 모든 학생이 저마다의 역할을 갖고 참여한다.",
+      "학생 간 상호작용이 교사의 관찰 범위 안에서 이루어진다."
+    ],
+    low: "협업 도구(패들렛, 문서 등)의 학생별 접속·수정 로그를 교차 분석해, 무임승차나 소외되는 학생을 먼저 찾아보세요."
+  },
+  {
+    key: "feedback", name: "피드백", full: "가시적 학습과 피드백 (Feedback)",
+    labelLines: ["가시적 학습과", "피드백"],
+    sub: "사고 과정의 변화가 드러나고 즉각적 피드백으로 이어지는지",
+    questions: [
+      "학생의 사고 과정 변화가 눈에 보이게 드러난다.",
+      "정답 여부뿐 아니라 풀이 과정에 대한 피드백을 준다.",
+      "피드백 후 학생이 스스로 수정할 시간이 주어진다."
+    ],
+    low: "AI의 즉각적 오답 교정(F2)에 그치지 않고, 축적된 데이터로 '노력 인정 → 인지적 수정 → 정서적 격려' 순서의 샌드위치 피드백을 한 명에게 먼저 시도해보세요."
+  },
+  {
+    key: "differentiation", name: "맞춤형지원", full: "개별화·맞춤형 지원 (Differentiation)",
+    labelLines: ["개별화", "맞춤형 지원"],
+    sub: "수준과 속도에 따른 개별 비계가 제공되는지",
+    questions: [
+      "학생의 수준과 속도에 따라 다른 지원(비계)을 제공한다.",
+      "어려움을 겪는 학생을 위한 별도의 학습 경로가 준비되어 있다.",
+      "빠르게 끝낸 학생을 위한 심화 과제가 준비되어 있다."
+    ],
+    low: "AI의 맞춤형 경로 추천 기능을 활용해, 취약점을 보완하는 개별 경로와 빠른 학생을 위한 심화 과제를 함께 준비해보세요."
+  }
+];
+const SCALE_LABELS = ["전혀\n아니다","그렇지\n않다","보통\n이다","그렇다","매우\n그렇다"];
+
+let answers = AXES.map(a => a.questions.map(() => null));
+let curCat = 0;
+let animFrame = null;
+let displayScores = [0,0,0,0,0]; // currently rendered (for animation)
+
+/* ---------------- navigation ---------------- */
+function showStage(id){
+  document.querySelectorAll(".stage").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function goSurvey(){
+  showStage("survey-screen");
+  renderProgress();
+  renderCategory();
+  renderPenta("pentaSvg","legendList");
+}
+
+/* ---------------- progress bar ---------------- */
+function renderProgress(){
+  const row = document.getElementById("progressRow");
+  row.innerHTML = "";
+  AXES.forEach((a,i) => {
+    const seg = document.createElement("div");
+    seg.className = "progress-seg";
+    const fill = document.createElement("i");
+    fill.style.width = i < curCat ? "100%" : (i === curCat ? "35%" : "0%");
+    seg.appendChild(fill);
+    row.appendChild(seg);
+  });
+}
+
+/* ---------------- render one category's questions ---------------- */
+function renderCategory(){
+  const axis = AXES[curCat];
+  document.getElementById("survey-eyebrow").textContent = `${curCat+1} / ${AXES.length} · ${axis.name}`;
+  document.getElementById("catLabel").textContent = axis.full;
+  document.getElementById("catSub").textContent = axis.sub;
+
+  const container = document.getElementById("qContainer");
+  container.innerHTML = "";
+  axis.questions.forEach((qText, qi) => {
+    const block = document.createElement("div");
+    block.className = "q-block";
+    const p = document.createElement("p");
+    p.className = "q-text";
+    p.innerHTML = `<span class="q-num">Q${qi+1}</span>${qText}`;
+    block.appendChild(p);
+
+    const scale = document.createElement("div");
+    scale.className = "scale";
+    SCALE_LABELS.forEach((label, li) => {
+      const val = li+1;
+      const btn = document.createElement("button");
+      btn.textContent = label;
+      btn.style.whiteSpace = "pre-line";
+      if (answers[curCat][qi] === val) btn.classList.add("picked");
+      btn.onclick = () => {
+        answers[curCat][qi] = val;
+        [...scale.children].forEach(c => c.classList.remove("picked"));
+        btn.classList.add("picked");
+        onAnswerChanged();
+      };
+      scale.appendChild(btn);
+    });
+    block.appendChild(scale);
+    container.appendChild(block);
+  });
+  updateNextButton();
+}
+
+// partial average: grows toward the true average as more of the category's questions are answered
+function partialAverage(catIdx){
+  const arr = answers[catIdx];
+  const answered = arr.filter(v => v !== null);
+  if (answered.length === 0) return 0;
+  return answered.reduce((a,b)=>a+b,0) / arr.length; // grows as more are answered, out of full 3
+}
+
+function onAnswerChanged(){
+  updateNextButton();
+  animateTo(getCurrentScores());
+  renderLegend("legendList");
+}
+
+function updateNextButton(){
+  const allAnswered = answers[curCat].every(v => v !== null);
+  document.getElementById("nextBtn").disabled = !allAnswered;
+  document.getElementById("nextBtn").textContent = curCat === AXES.length-1 ? "결과 보기 →" : "다음 영역 →";
+}
+
+function nextCategory(){
+  if (curCat < AXES.length-1){
+    curCat++;
+    renderProgress();
+    renderCategory();
+  } else {
+    finishSurvey();
+  }
+}
+
+function getCurrentScores(){
+  return AXES.map((a,i) => partialAverage(i));
+}
+
+/* ---------------- pentagon geometry ---------------- */
+const CX = 180, CY = 190, R = 100;
+function axisPoint(index, value /*0..5*/){
+  const angle = (-90 + index * (360/5)) * Math.PI/180;
+  const ratio = Math.max(0, Math.min(1, value/5));
+  return [CX + Math.cos(angle)*R*ratio, CY + Math.sin(angle)*R*ratio];
+}
+function axisLabelPoint(index){
+  const angle = (-90 + index * (360/5)) * Math.PI/180;
+  return [CX + Math.cos(angle)*(R+34), CY + Math.sin(angle)*(R+34)];
+}
+
+function ringPolygon(ratio){
+  let pts = [];
+  for (let i=0;i<5;i++){
+    const angle = (-90 + i*(360/5)) * Math.PI/180;
+    pts.push([CX+Math.cos(angle)*R*ratio, CY+Math.sin(angle)*R*ratio]);
+  }
+  return pts.map(p=>p.join(",")).join(" ");
+}
+
+function buildStaticSvg(svgId, fullLabel){
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = "";
+  const ns = "http://www.w3.org/2000/svg";
+
+  // background rings
+  [0.2,0.4,0.6,0.8,1.0].forEach(r=>{
+    const poly = document.createElementNS(ns,"polygon");
+    poly.setAttribute("points", ringPolygon(r));
+    poly.setAttribute("fill","none");
+    poly.setAttribute("stroke","rgba(244,239,226,0.14)");
+    poly.setAttribute("stroke-width","1");
+    svg.appendChild(poly);
+  });
+  // spokes
+  for (let i=0;i<5;i++){
+    const [x,y] = axisPoint(i,5);
+    const line = document.createElementNS(ns,"line");
+    line.setAttribute("x1",CX); line.setAttribute("y1",CY);
+    line.setAttribute("x2",x); line.setAttribute("y2",y);
+    line.setAttribute("stroke","rgba(244,239,226,0.14)");
+    line.setAttribute("stroke-width","1");
+    svg.appendChild(line);
+  }
+  // fill polygon (id=fillPoly)
+  const fillPoly = document.createElementNS(ns,"polygon");
+  fillPoly.setAttribute("id","fillPoly_"+svgId);
+  fillPoly.setAttribute("points", ringPolygon(0));
+  fillPoly.setAttribute("fill","var(--gold)");
+  fillPoly.setAttribute("fill-opacity","0.32");
+  fillPoly.setAttribute("stroke","var(--gold)");
+  fillPoly.setAttribute("stroke-width","2");
+  svg.appendChild(fillPoly);
+
+  // vertex dots
+  for (let i=0;i<5;i++){
+    const dot = document.createElementNS(ns,"circle");
+    dot.setAttribute("id","dot_"+svgId+"_"+i);
+    dot.setAttribute("r","4");
+    dot.setAttribute("fill","#e8b84b");
+    const [x,y] = axisPoint(i,0);
+    dot.setAttribute("cx",x); dot.setAttribute("cy",y);
+    svg.appendChild(dot);
+  }
+
+  // labels
+  for (let i=0;i<5;i++){
+    const [lx,ly] = axisLabelPoint(i);
+    const lines = fullLabel ? AXES[i].labelLines : [AXES[i].name];
+    const lineHeight = fullLabel ? 13 : 0;
+    const startY = ly - ((lines.length-1) * lineHeight)/2;
+
+    const text = document.createElementNS(ns,"text");
+    text.setAttribute("x",lx); text.setAttribute("y",startY);
+    text.setAttribute("text-anchor","middle");
+    text.setAttribute("class","axis-name");
+    lines.forEach((line, li) => {
+      const tspan = document.createElementNS(ns,"tspan");
+      tspan.setAttribute("x", lx);
+      tspan.setAttribute("dy", li === 0 ? 0 : lineHeight);
+      tspan.textContent = line;
+      text.appendChild(tspan);
+    });
+    svg.appendChild(text);
+
+    const score = document.createElementNS(ns,"text");
+    score.setAttribute("id","score_"+svgId+"_"+i);
+    score.setAttribute("x",lx); score.setAttribute("y", startY + (lines.length-1)*lineHeight + 17);
+    score.setAttribute("text-anchor","middle");
+    score.setAttribute("class","axis-score");
+    score.textContent = "";
+    svg.appendChild(score);
+  }
+}
+
+function updatePentaVisual(svgId, values){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  const fillPoly = document.getElementById("fillPoly_"+svgId);
+  let pts = [];
+  for (let i=0;i<5;i++){
+    const [x,y] = axisPoint(i, values[i]);
+    pts.push([x,y]);
+    const dot = document.getElementById("dot_"+svgId+"_"+i);
+    if (dot){ dot.setAttribute("cx",x); dot.setAttribute("cy",y); }
+    const scoreEl = document.getElementById("score_"+svgId+"_"+i);
+    if (scoreEl) scoreEl.textContent = values[i] > 0 ? values[i].toFixed(1) : "";
+  }
+  fillPoly.setAttribute("points", pts.map(p=>p.join(",")).join(" "));
+}
+
+function renderPenta(svgId, legendId){
+  buildStaticSvg(svgId);
+  displayScores = [0,0,0,0,0];
+  updatePentaVisual(svgId, displayScores);
+  renderLegend(legendId);
+}
+
+function renderLegend(legendId){
+  const list = document.getElementById(legendId);
+  if(!list) return;
+  list.innerHTML = "";
+  const scores = getCurrentScores();
+  AXES.forEach((a,i)=>{
+    const row = document.createElement("div");
+    row.className = "legend-row";
+    row.innerHTML = `<span>${a.name}</span><span class="v">${scores[i]>0 ? scores[i].toFixed(1) : "-"} / 5</span>`;
+    list.appendChild(row);
+  });
+}
+
+function animateTo(targetValues){
+  const svgId = document.getElementById("result-screen").classList.contains("active") ? "pentaSvgFinal" : "pentaSvg";
+  const start = [...displayScores];
+  const duration = 420;
+  const t0 = performance.now();
+  if (animFrame) cancelAnimationFrame(animFrame);
+  function step(now){
+    const t = Math.min(1, (now - t0)/duration);
+    const eased = 1 - Math.pow(1-t, 3);
+    const cur = start.map((s,i) => s + (targetValues[i]-s)*eased);
+    displayScores = cur;
+    updatePentaVisual(svgId, cur);
+    if (t < 1) animFrame = requestAnimationFrame(step);
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+/* ---------------- finish & result ---------------- */
+function finishSurvey(){
+  showStage("result-screen");
+  buildStaticSvg("pentaSvgFinal", true);
+  const scores = getCurrentScores();
+  displayScores = [0,0,0,0,0];
+  animateTo(scores);
+  renderLegend("legendListFinal");
+
+  let minIdx = 0;
+  scores.forEach((s,i)=>{ if (s < scores[minIdx]) minIdx = i; });
+  const weak = AXES[minIdx];
+  document.getElementById("lowestCallout").innerHTML = `
+    <span class="tag">가장 옅게 채워진 꼭짓점</span>
+    <p><b>${weak.full}</b> — ${scores[minIdx].toFixed(1)} / 5</p>
+    <p class="suggest">${weak.low}</p>
+  `;
+}
+
+function restart(){
+  answers = AXES.map(a => a.questions.map(() => null));
+  curCat = 0;
+  document.getElementById("reflection").value = "";
+  showStage("intro-screen");
+}
+</script>
+</body>
+</html>
